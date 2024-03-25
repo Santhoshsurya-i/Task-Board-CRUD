@@ -1,0 +1,70 @@
+.kanban-board {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 20px;
+  }
+  .column {
+    background-color: #f1f1f1;
+    padding: 10px;
+    margin-bottom: 20px;
+    width: 100%;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  @media (min-width: 768px) {
+    .column {
+      width: calc(50% - 10px);
+      margin-right: 20px;
+    }
+  }
+  @media (min-width: 992px) {
+    .column {
+      width: calc(24% - 15px);
+    }
+  }
+  .column-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  .task {
+    position: relative;
+    background-color: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: move;
+  }
+  .delete-task{
+    position:absolute;
+    vertical-align: middle;
+    right: 10px;
+    cursor: pointer;
+  }
+  .add-task-form {
+    margin-top: 20px;
+    
+  }
+  .add-task-form input{
+    
+    text-wrap: break-word;
+  }
+  .dark-mode {
+    background-color: #333;
+    color: #fff;
+  }
+  .dark-mode .column {
+    background-color: #444;
+  }
+  .dark-mode .task {
+    background-color: #555;
+    color: #fff;
+  }
+  .dark-mode .column-header {
+    background-color: #007bff;
+    color: #fff;
+  }

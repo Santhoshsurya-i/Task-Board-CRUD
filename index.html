@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Kanban Board</title>
+	<link rel="stylesheet" href="style.css">
+	
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+		integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
+		crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+
+	<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+</head>
+
+<body>
+	<div class="container">
+		<div class="navbar">
+			<span class="d-flex mt-3 h5">TASKBOARD</span>
+			<div class="d-flex justify-content-end mt-4 mb-4">
+				<button class="btn btn-secondary mr-4 rounded-circle" id="dark-mode-toggle"><i
+						class="fas fa-moon"></i></button>
+				<button class="btn btn-danger rounded-circle" id="reset-board">
+					<i class="fas fa-undo"></i>
+				</button>
+			</div>
+		</div>
+		<div class="kanban-board">
+			<div class="column">
+				<div class="column-header">To Do</div>
+				<div class="task-list" id="to-do"></div>
+				<form class="add-task-form">
+					<input type="text" class="form-control" placeholder="Add new task">
+				</form>
+			</div>
+			<div class="column">
+				<div class="column-header">In Progress</div>
+				<div class="task-list" id="in-progress"></div>
+			</div>
+			<div class="column">
+				<div class="column-header">Review</div>
+				<div class="task-list" id="review"></div>
+			</div>
+			<div class="column">
+				<div class="column-header">Done</div>
+				<div class="task-list" id="done"></div>
+			</div>
+		</div>
+	</div>
+	<script>
+		const taskLists = {
+			'To Do': [],
+			'In Progress': [],
+			'Review': [],
+			'Done': []
+		};
+
+
+		if (localStorage.getItem('taskLists')) {
+			const storedTaskLists = JSON.parse(localStorage.getItem('taskLists'));
+			Object.assign(taskLists, storedTaskLists);
+			loadTaskLists();
+		}
+
+
+		const containers = document.querySelectorAll('.task-list');
+		containers.forEach(container => {
+			new Sortable(container, {
+				group: 'shared',
+				animation: 150,
+				onAdd: (event) => {
+					const columnFrom = event.from.parentNode.querySelector('.column-header').textContent;
+					const columnTo = event.to.parentNode.querySelector('.column-header').textContent;
+					const taskId = event.item.dataset.taskId;
+					const task = taskLists[columnFrom].find(t => t.id === parseInt(taskId));
+					taskLists[columnFrom] = taskLists[columnFrom].filter(t => t.id !== parseInt(taskId));
+					taskLists[columnTo].push(task);
+					updateTaskLists();
+				}
+			});
+		});
+
+
+		const addTaskForms = document.querySelectorAll('.add-task-form');
+		addTaskForms.forEach(form => {
+			form.addEventListener('submit', (e) => {
+				e.preventDefault();
+				const taskText = e.target.querySelector('input').value.trim();
+				if (taskText) {
+					const taskId = Date.now();
+					const taskElement = createTaskElement(taskText, taskId);
+					const toDoList = document.getElementById('to-do');
+					toDoList.appendChild(taskElement);
+					taskLists['To Do'].push({ id: taskId, text: taskText });
+					e.target.reset();
+					updateTaskLists();
+				}
+			});
+		});
+
+
+		document.addEventListener('click', (e) => {
+			if (e.target.classList.contains('delete-task')) {
+				const taskElement = e.target.parentNode;
+				const taskId = taskElement.dataset.taskId;
+				const columnName = taskElement.parentNode.parentNode.querySelector('.column-header').textContent;
+				taskElement.remove();
+				taskLists[columnName] = taskLists[columnName].filter(t => t.id !== parseInt(taskId));
+				updateTaskLists();
+			}
+		});
+
+
+		document.addEventListener('dblclick', (e) => {
+			if (e.target.classList.contains('task')) {
+				const taskElement = e.target;
+				const taskText = taskElement.firstChild.textContent;
+				const newTaskText = prompt('Edit task:', taskText);
+				if (newTaskText !== null && newTaskText.trim() !== '') {
+					taskElement.firstChild.textContent = newTaskText;
+					const taskId = taskElement.dataset.taskId;
+					const columnName = taskElement.parentNode.parentNode.querySelector('.column-header').textContent;
+					const task = taskLists[columnName].find(t => t.id === parseInt(taskId));
+					task.text = newTaskText;
+					updateTaskLists();
+				}
+			}
+		});
+
+		document.body.classList.add('dark-mode');
+
+		const darkModeToggle = document.getElementById('dark-mode-toggle');
+		const body = document.body;
+		darkModeToggle.addEventListener('click', () => {
+			body.classList.toggle('dark-mode');
+		});
+
+		const resetBoard = document.getElementById('reset-board');
+		resetBoard.addEventListener('click', () => {
+			localStorage.removeItem('taskLists');
+			location.reload();
+		});
+
+		function createTaskElement(text, id) {
+			const taskElement = document.createElement('div');
+			taskElement.classList.add('task');
+			taskElement.textContent = text;
+			taskElement.dataset.taskId = id;
+
+			const deleteIcon = document.createElement('span');
+			deleteIcon.classList.add('delete-task', 'fa', 'fa-times');
+			deleteIcon.setAttribute('aria-hidden', 'true');
+			taskElement.appendChild(deleteIcon);
+			return taskElement;
+		}
+
+		function loadTaskLists() {
+			Object.keys(taskLists).forEach(columnName => {
+				const taskList = document.getElementById(columnName.replace(/\s+/g, '-').toLowerCase());
+				taskLists[columnName].forEach(task => {
+					const taskElement = createTaskElement(task.text, task.id);
+					taskList.appendChild(taskElement);
+				});
+			});
+		}
+
+		function updateTaskLists() {
+			localStorage.setItem('taskLists', JSON.stringify(taskLists));
+		}
+	</script>
+
+</body>
+
+</html>
